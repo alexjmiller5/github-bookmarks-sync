@@ -4,9 +4,7 @@ import type { Bookmark } from './notion';
 /** Canonical form for URL matching: lowercase host, no trailing slash. */
 export function normalizeUrl(raw: string): string {
 	try {
-		const u = new URL(raw); // URL lowercases the host for us
-		u.pathname = u.pathname.replace(/\/$/, '');
-		return u.toString().replace(/\/$/, '');
+		return new URL(raw).toString().replace(/\/$/, ''); // URL lowercases the host for us
 	} catch {
 		return raw; // ponytail: non-URL strings pass through; they just never match anything
 	}

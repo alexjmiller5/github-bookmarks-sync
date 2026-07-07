@@ -124,7 +124,10 @@ describe('createBookmark', () => {
 	});
 
 	it('throws on a non-2xx response (no silent write failures)', async () => {
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('rate limited', { status: 429 })));
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(new Response('rate limited', { status: 429 }))
+		);
 		await expect(
 			createBookmark('key', {
 				fullName: 'owner/repo',

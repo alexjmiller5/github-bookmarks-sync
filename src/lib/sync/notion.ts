@@ -64,9 +64,7 @@ export async function createBookmark(notionKey: string, repo: StarredRepo): Prom
 					rich_text: [
 						{
 							text: {
-								content: repo.description
-									? `${repo.fullName}: ${repo.description}`
-									: repo.fullName
+								content: repo.description ? `${repo.fullName}: ${repo.description}` : repo.fullName
 							}
 						}
 					]

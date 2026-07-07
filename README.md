@@ -14,6 +14,22 @@ Architecture notes:
   (URL is the unique key), so no blob storage is needed. ponytail: add an R2
   binding to wrangler.jsonc only if we later need caching beyond Notion.
 
+## Sync semantics (assumptions)
+
+- **One-way, GitHub → Notion.** The project title says "↔" but the valuable
+  direction ships first; bidirectional can come later.
+- **Never deletes.** A repo that gets un-starred is only reported
+  (`diffStars().unstarred`) — bookmarks may be kept intentionally.
+- **Upsert key** is the normalized URL (lowercase host, no trailing slash).
+- **Field mapping** (verified against existing Github-tagged Bookmarks rows):
+  `Description` (the DB's title property) = repo description,
+  `Title` (rich_text) = `owner/repo: description`, `URL` = repo html_url,
+  `Tags` = `["Github"]`. Repos without a description use `owner/repo` for
+  both text fields.
+
+Core logic lives in `src/lib/sync/` (`github.ts`, `notion.ts`, `diff.ts`),
+framework-free with vitest specs alongside.
+
 ## Layout
 
 ```
