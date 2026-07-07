@@ -27,18 +27,49 @@ Architecture notes:
   `Tags` = `["Github"]`. Repos without a description use `owner/repo` for
   both text fields.
 
-Core logic lives in `src/lib/sync/` (`github.ts`, `notion.ts`, `diff.ts`),
-framework-free with vitest specs alongside.
+Core logic lives in `src/lib/sync/` (`github.ts`, `notion.ts`, `diff.ts`,
+`run.ts`), framework-free with vitest specs alongside. Every run emits one
+structured `sync_run` JSON log line (starred/created/skipped/unstarred/errors)
+— visible via `just logs`.
+
+## Running the sync
+
+- **Cron**: daily at 06:00 UTC — `triggers.crons: ["0 6 * * *"]` in
+  `wrangler.jsonc` (free CF cron; deliberately not one of the 5 Modal slots).
+- **Manual endpoint**: `POST /api/sync`, authed by the `SYNC_TOKEN` Worker
+  secret (see `.env.tpl`); append `?dry_run=true` to diff without writing:
+
+  ```bash
+  curl -X POST "https://github-bookmarks-sync.<subdomain>.workers.dev/api/sync" \
+    -H "Authorization: Bearer $(op read 'op://GitHub-Bookmarks-Sync/Sync Token/token')"
+  ```
+
+  The shared-secret header is a stopgap until Cloudflare Access fronts this
+  Worker (Service Tokens for machine callers) — swap it out then.
+
+- **From this machine** (one-off, real writes unless `--dry-run`):
+
+  ```bash
+  op run --env-file=.env.tpl -- bun scripts/dry-run.ts --dry-run
+  ```
 
 ## Layout
 
 ```
-src/routes/       pages + server routes (sync endpoint lives here)
+src/worker.ts     Worker entrypoint: SvelteKit fetch + scheduled() cron handler
+src/routes/       pages + server routes (POST /api/sync lives here)
 src/routes/layout.css   Tailwind + @theme design tokens
 wrangler.jsonc    the IaC — bindings, cron triggers, domain
+wrangler.build.jsonc    adapter-only build config (do not deploy with it)
 .env.tpl          secrets manifest (1Password op:// refs, committed)
 justfile          dev / test / check / fmt / build / logs / sync-secrets / deploy
 ```
+
+The SvelteKit Cloudflare adapter writes its worker to the `main` of whatever
+wrangler config it reads and cannot emit a `scheduled()` handler, so the
+adapter is pointed at `wrangler.build.jsonc` (via `vite.config.ts`) and the
+real `wrangler.jsonc` `main` is `src/worker.ts`, which wraps the build output
+and adds the cron handler.
 
 ## Commands
 
@@ -57,6 +88,8 @@ op item create --category "API Credential" --title "GitHub PAT" \
   --vault "GitHub-Bookmarks-Sync" "token[concealed]=<a GitHub PAT with read:user scope, for reading your starred repos>"
 op item create --category "API Credential" --title "Notion Integration" \
   --vault "GitHub-Bookmarks-Sync" "token[concealed]=<a Notion internal integration secret with access to the Bookmarks DB>"
+op item create --category "API Credential" --title "Sync Token" \
+  --vault "GitHub-Bookmarks-Sync" "token[concealed]=$(openssl rand -hex 32)"
 # CI deploy creds (used by .github/workflows/deploy.yml)
 op item create --category "API Credential" --title "cloudflare" \
   --vault "GitHub-Bookmarks-Sync" \
@@ -74,6 +107,9 @@ op item create --category "API Credential" \
 gh repo create alexjmiller5/github-bookmarks-sync --private --source . --push
 gh secret set OP_SERVICE_ACCOUNT_TOKEN \
   --body "$(op read 'op://Personal/github-bookmarks-sync-ci SA Token/token')"
+
+# 4. Push Worker secrets (GITHUB_TOKEN, NOTION_API_KEY, SYNC_TOKEN)
+just sync-secrets
 ```
 
 Also share the Notion integration with the Bookmarks DB (Notion UI:

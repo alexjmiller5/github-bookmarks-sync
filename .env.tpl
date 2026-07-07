@@ -4,3 +4,4 @@
 # Push to CF:     just sync-secrets
 GITHUB_TOKEN=op://GitHub-Bookmarks-Sync/GitHub PAT/token
 NOTION_API_KEY=op://GitHub-Bookmarks-Sync/Notion Integration/token
+SYNC_TOKEN=op://GitHub-Bookmarks-Sync/Sync Token/token

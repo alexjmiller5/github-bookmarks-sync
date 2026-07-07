@@ -3,7 +3,9 @@
 	"compilerOptions": {
 		"rewriteRelativeImportExtensions": true,
 		"allowJs": true,
-		"checkJs": true,
+		// off: src/worker.ts imports the built .svelte-kit/cloudflare/_worker.js,
+		// and checkJs would type-check that generated bundle (no .js sources here)
+		"checkJs": false,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true,

@@ -12,7 +12,9 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter()
+			// config: keep the adapter writing to .svelte-kit/cloudflare/_worker.js;
+			// wrangler.jsonc's real `main` (src/worker.ts) wraps it to add scheduled()
+			adapter: adapter({ config: 'wrangler.build.jsonc' })
 		})
 	],
 	test: {

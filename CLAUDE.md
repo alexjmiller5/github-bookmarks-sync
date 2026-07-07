@@ -14,8 +14,20 @@ cron trigger + manual endpoint.
   is the unique key). Add an R2 binding to wrangler.jsonc only if we later
   need caching beyond Notion.
 - **One-way sync only** (GitHub → Notion) for now.
-- Secrets: `GITHUB_TOKEN`, `NOTION_API_KEY` (see `.env.tpl`; vault
-  `GitHub-Bookmarks-Sync`).
+- Secrets: `GITHUB_TOKEN`, `NOTION_API_KEY`, `SYNC_TOKEN` (see `.env.tpl`;
+  vault `GitHub-Bookmarks-Sync`).
+- **Cron**: daily 06:00 UTC via `triggers.crons` in wrangler.jsonc; manual
+  runs via `POST /api/sync` with `Authorization: Bearer $SYNC_TOKEN` — a
+  stopgap until CF Access fronts the Worker.
+- **Custom Worker entry** (deviation from the template): the CF adapter
+  writes its worker to the `main` of whatever wrangler config it reads and
+  can't emit `scheduled()`, so the adapter reads `wrangler.build.jsonc`
+  (set in vite.config.ts) while the real `wrangler.jsonc` `main` is
+  `src/worker.ts`, which wraps the build output and adds the cron handler.
+  Keep the two configs' `name`/`compatibility_date` in sync. Consequences:
+  `checkJs` is off in tsconfig.json (svelte-check would otherwise type-check
+  the generated bundle via the worker-configuration.d.ts `mainModule` import),
+  and `vite build` must precede any wrangler deploy/dry-run.
 
 ## Architecture rules
 

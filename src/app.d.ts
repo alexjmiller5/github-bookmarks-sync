@@ -1,6 +1,14 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 declare global {
+	// Worker secrets (pushed via `just sync-secrets`) — wrangler types can't
+	// see them, so they're declared here and merged into the generated Env.
+	interface Env {
+		GITHUB_TOKEN: string;
+		NOTION_API_KEY: string;
+		SYNC_TOKEN: string;
+	}
+
 	namespace App {
 		interface Platform {
 			env: Env;
