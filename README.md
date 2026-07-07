@@ -76,6 +76,40 @@ and adds the cron handler.
 `just dev` · `just test` · `just check` · `just fmt` · `just build` ·
 `just logs` · `just sync-secrets` · `just deploy`
 
+## CI
+
+`.github/workflows/ci.yml` runs `just check` + `just test` on push/PR. Tests
+mock all HTTP, so CI needs zero secrets.
+
+There is deliberately **no deploy job yet** — it needs the 1P vault + service
+account from the setup section below. Once those exist, add a `deploy` job to
+the same workflow (push-to-main only), with `OP_SERVICE_ACCOUNT_TOKEN` as the
+repo's single GH secret:
+
+```yaml
+deploy:
+  needs: ci
+  if: github.ref == 'refs/heads/main'
+  runs-on: ubuntu-latest
+  env:
+    OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+  steps:
+    - uses: actions/checkout@v4
+    - uses: oven-sh/setup-bun@v2
+    - uses: 1Password/install-cli-action@v4
+    - uses: 1password/load-secrets-action@v2
+      with:
+        export-env: true
+      env:
+        CLOUDFLARE_API_TOKEN: op://GitHub-Bookmarks-Sync/cloudflare/api-token
+        CLOUDFLARE_ACCOUNT_ID: op://GitHub-Bookmarks-Sync/cloudflare/account-id
+    - run: bun install --frozen-lockfile
+    - run: bun run build
+    - run: bunx wrangler deploy
+    # after deploy — `wrangler secret put` needs the Worker to exist
+    - run: ./scripts/sync-secrets.sh
+```
+
 ## One-time setup (Alex)
 
 The Claude shell's 1Password service account cannot create vaults or service
@@ -90,7 +124,7 @@ op item create --category "API Credential" --title "Notion Integration" \
   --vault "GitHub-Bookmarks-Sync" "token[concealed]=<a Notion internal integration secret with access to the Bookmarks DB>"
 op item create --category "API Credential" --title "Sync Token" \
   --vault "GitHub-Bookmarks-Sync" "token[concealed]=$(openssl rand -hex 32)"
-# CI deploy creds (used by .github/workflows/deploy.yml)
+# CI deploy creds (for the future deploy job — see the CI section above)
 op item create --category "API Credential" --title "cloudflare" \
   --vault "GitHub-Bookmarks-Sync" \
   "api-token[concealed]=<CF API token with Workers edit>" \

@@ -78,5 +78,7 @@ not a script catalog; one-offs go in `scripts/` and run directly.
 ## TDD
 
 Write the test first (`*.spec.ts` next to the code, or `src/**/*.svelte.spec.ts`
-for components), then the code. Delete `src/lib/vitest-examples/` once real
-tests exist.
+for components), then the code. Tests mock all HTTP — CI
+(`.github/workflows/ci.yml`: `just check` + `just test` on push/PR) needs no
+secrets. No deploy job yet; the future shape is documented in the README's CI
+section.
