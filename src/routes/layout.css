@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+
+/* Design tokens — ALL colors, fonts, spacing, radii live here.
+   Components consume tokens (bg-brand, font-display, …), never raw values. */
+@theme {
+	/* CHANGEME — e.g.:
+	--color-brand: oklch(0.55 0.2 260);
+	--color-surface: oklch(0.98 0 0);
+	--font-display: 'Inter Variable', sans-serif;
+	--radius-card: 1rem;
+	*/
+}
