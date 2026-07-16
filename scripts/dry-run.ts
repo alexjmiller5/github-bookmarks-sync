@@ -12,7 +12,20 @@ if (!GITHUB_TOKEN || !NOTION_API_KEY) {
 	process.exit(1);
 }
 
-const summary = await runSync({ GITHUB_TOKEN, NOTION_API_KEY }, { trigger: 'script', dryRun });
+// NOTION_DATA_SOURCE_ID is a plain wrangler var, not a secret — read it from
+// the same place the Worker does (ponytail: strip line comments, wrangler.jsonc has no others)
+const wrangler = JSON.parse(
+	(await Bun.file(new URL('../wrangler.jsonc', import.meta.url)).text()).replace(
+		/^\s*\/\/.*$/gm,
+		''
+	)
+) as { vars: { NOTION_DATA_SOURCE_ID: string } };
+const NOTION_DATA_SOURCE_ID = wrangler.vars.NOTION_DATA_SOURCE_ID;
+
+const summary = await runSync(
+	{ GITHUB_TOKEN, NOTION_API_KEY, NOTION_DATA_SOURCE_ID },
+	{ trigger: 'script', dryRun }
+);
 
 console.log(`\n${dryRun ? 'DRY RUN — nothing written' : 'Sync complete'}`);
 console.log(`starred=${summary.starred} created=${summary.created} skipped=${summary.skipped}`);

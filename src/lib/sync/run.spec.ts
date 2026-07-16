@@ -16,7 +16,7 @@ const bookmark = (n: number): Bookmark => ({
 	url: `https://github.com/owner/repo${n}`
 });
 
-const env = { GITHUB_TOKEN: 'gh', NOTION_API_KEY: 'nk' };
+const env = { GITHUB_TOKEN: 'gh', NOTION_API_KEY: 'nk', NOTION_DATA_SOURCE_ID: 'ds' };
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -32,7 +32,7 @@ describe('runSync', () => {
 		const summary = await runSync(env, { trigger: 'test' });
 
 		expect(createBookmark).toHaveBeenCalledTimes(1);
-		expect(createBookmark).toHaveBeenCalledWith('nk', repo(1));
+		expect(createBookmark).toHaveBeenCalledWith('nk', 'ds', repo(1));
 		expect(summary).toMatchObject({
 			trigger: 'test',
 			dryRun: false,

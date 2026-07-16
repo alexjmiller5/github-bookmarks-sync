@@ -5,6 +5,7 @@ import { diffStars } from './diff';
 export interface SyncEnv {
 	GITHUB_TOKEN: string;
 	NOTION_API_KEY: string;
+	NOTION_DATA_SOURCE_ID: string;
 }
 
 export interface SyncSummary {
@@ -26,7 +27,7 @@ export async function runSync(
 	const dryRun = opts.dryRun ?? false;
 	const [starred, existing] = await Promise.all([
 		fetchStarredRepos(env.GITHUB_TOKEN),
-		fetchGithubBookmarks(env.NOTION_API_KEY)
+		fetchGithubBookmarks(env.NOTION_API_KEY, env.NOTION_DATA_SOURCE_ID)
 	]);
 	const diff = diffStars(starred, existing);
 
@@ -36,7 +37,7 @@ export async function runSync(
 		// ponytail: sequential creates — stays under Notion's ~3 req/s without a rate limiter
 		for (const repo of diff.toCreate) {
 			try {
-				await createBookmark(env.NOTION_API_KEY, repo);
+				await createBookmark(env.NOTION_API_KEY, env.NOTION_DATA_SOURCE_ID, repo);
 				created++;
 			} catch (e) {
 				errors.push(`${repo.fullName}: ${e instanceof Error ? e.message : String(e)}`);

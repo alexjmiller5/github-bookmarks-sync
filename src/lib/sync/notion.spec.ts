@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { fetchGithubBookmarks, createBookmark, BOOKMARKS_DATA_SOURCE_ID } from './notion';
+import { fetchGithubBookmarks, createBookmark } from './notion';
+
+const DATA_SOURCE_ID = 'ds-test-id';
 
 function jsonResponse(body: unknown) {
 	return new Response(JSON.stringify(body), {
@@ -22,9 +24,9 @@ describe('fetchGithubBookmarks', () => {
 		const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ results: [], has_more: false }));
 		vi.stubGlobal('fetch', fetchMock);
 
-		await fetchGithubBookmarks('key');
+		await fetchGithubBookmarks('key', DATA_SOURCE_ID);
 		const [url, init] = fetchMock.mock.calls[0];
-		expect(url).toBe(`https://api.notion.com/v1/data_sources/${BOOKMARKS_DATA_SOURCE_ID}/query`);
+		expect(url).toBe(`https://api.notion.com/v1/data_sources/${DATA_SOURCE_ID}/query`);
 		expect(init.method).toBe('POST');
 		expect(init.headers['Authorization']).toBe('Bearer key');
 		expect(init.headers['Notion-Version']).toBe('2026-03-11');
@@ -42,7 +44,7 @@ describe('fetchGithubBookmarks', () => {
 				})
 			)
 		);
-		const bookmarks = await fetchGithubBookmarks('key');
+		const bookmarks = await fetchGithubBookmarks('key', DATA_SOURCE_ID);
 		expect(bookmarks).toEqual([{ pageId: 'p1', url: 'https://github.com/a/b' }]);
 	});
 
@@ -65,7 +67,7 @@ describe('fetchGithubBookmarks', () => {
 			);
 		vi.stubGlobal('fetch', fetchMock);
 
-		const bookmarks = await fetchGithubBookmarks('key');
+		const bookmarks = await fetchGithubBookmarks('key', DATA_SOURCE_ID);
 		expect(bookmarks.map((b) => b.pageId)).toEqual(['p1', 'p2']);
 		expect(fetchMock).toHaveBeenCalledTimes(2);
 		expect(JSON.parse(fetchMock.mock.calls[1][1].body).start_cursor).toBe('cur2');
@@ -73,7 +75,7 @@ describe('fetchGithubBookmarks', () => {
 
 	it('throws on a non-2xx response', async () => {
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('nope', { status: 403 })));
-		await expect(fetchGithubBookmarks('key')).rejects.toThrow(/403/);
+		await expect(fetchGithubBookmarks('key', DATA_SOURCE_ID)).rejects.toThrow(/403/);
 	});
 });
 
@@ -85,7 +87,7 @@ describe('createBookmark', () => {
 		const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ id: 'new-page' }));
 		vi.stubGlobal('fetch', fetchMock);
 
-		await createBookmark('key', {
+		await createBookmark('key', DATA_SOURCE_ID, {
 			fullName: 'owner/repo',
 			description: 'A fine repo.',
 			htmlUrl: 'https://github.com/owner/repo'
@@ -98,7 +100,7 @@ describe('createBookmark', () => {
 		const body = JSON.parse(init.body);
 		expect(body.parent).toEqual({
 			type: 'data_source_id',
-			data_source_id: BOOKMARKS_DATA_SOURCE_ID
+			data_source_id: DATA_SOURCE_ID
 		});
 		expect(body.properties).toEqual({
 			Description: { title: [{ text: { content: 'A fine repo.' } }] },
@@ -112,7 +114,7 @@ describe('createBookmark', () => {
 		const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ id: 'new-page' }));
 		vi.stubGlobal('fetch', fetchMock);
 
-		await createBookmark('key', {
+		await createBookmark('key', DATA_SOURCE_ID, {
 			fullName: 'owner/repo',
 			description: null,
 			htmlUrl: 'https://github.com/owner/repo'
@@ -129,7 +131,7 @@ describe('createBookmark', () => {
 			vi.fn().mockResolvedValue(new Response('rate limited', { status: 429 }))
 		);
 		await expect(
-			createBookmark('key', {
+			createBookmark('key', DATA_SOURCE_ID, {
 				fullName: 'owner/repo',
 				description: null,
 				htmlUrl: 'https://github.com/owner/repo'

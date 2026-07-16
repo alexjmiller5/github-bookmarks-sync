@@ -110,10 +110,10 @@ deploy:
     - run: ./scripts/sync-secrets.sh
 ```
 
-## One-time setup (Alex)
+## One-time setup
 
-The Claude shell's 1Password service account cannot create vaults or service
-accounts, so these are manual. Run once:
+A 1Password service account cannot create vaults or service accounts, so
+these are manual. Run once:
 
 ```bash
 # 1. Project vault + credential items
@@ -130,21 +130,27 @@ op item create --category "API Credential" --title "cloudflare" \
   "api-token[concealed]=<CF API token with Workers edit>" \
   "account-id[text]=<CF account id>"
 
-# 2. Read-only CI service account, token stored in Personal
+# 2. Read-only CI service account, token stored in your own vault
 OUT=$(op service-account create "github-bookmarks-sync-ci" \
   --vault "GitHub-Bookmarks-Sync:read_items" --format json </dev/null)
 op item create --category "API Credential" \
-  --title "github-bookmarks-sync-ci SA Token" --vault Personal \
+  --title "github-bookmarks-sync-ci SA Token" --vault "<your vault>" \
   "token[concealed]=$(echo "$OUT" | jq -r .token)" </dev/null
 
 # 3. GitHub repo + the single CI secret
-gh repo create alexjmiller5/github-bookmarks-sync --private --source . --push
+gh repo create <owner>/<repo> --source . --push
 gh secret set OP_SERVICE_ACCOUNT_TOKEN \
-  --body "$(op read 'op://Personal/github-bookmarks-sync-ci SA Token/token')"
+  --body "$(op read 'op://<your vault>/github-bookmarks-sync-ci SA Token/token')"
 
 # 4. Push Worker secrets (GITHUB_TOKEN, NOTION_API_KEY, SYNC_TOKEN)
 just sync-secrets
 ```
 
-Also share the Notion integration with the Bookmarks DB (Notion UI:
-Bookmarks DB → connections → add the integration).
+Also:
+
+- Share the Notion integration with the Bookmarks DB (Notion UI:
+  Bookmarks DB → connections → add the integration).
+- Set `NOTION_DATA_SOURCE_ID` (under `vars` in `wrangler.jsonc`) to your
+  Bookmarks DB's data-source id — plain config, not a secret, so it lives in
+  the wrangler config rather than `.env.tpl`. Both the Worker and
+  `scripts/dry-run.ts` read it from there.

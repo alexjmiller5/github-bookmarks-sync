@@ -7,15 +7,14 @@ cron trigger + manual endpoint.
 
 ## Project decisions
 
-- **CF Worker, not modal-service**: per Alex's project note ("try cloudflare
-  r2 workers instead because gcp was a pain with terraform"). wrangler.jsonc
-  IS the IaC — no terraform.
+- **CF Worker, not modal-service**: wrangler.jsonc IS the IaC — no terraform.
 - **No R2 for MVP**: sync state lives in the Notion Bookmarks DB itself (URL
   is the unique key). Add an R2 binding to wrangler.jsonc only if we later
   need caching beyond Notion.
 - **One-way sync only** (GitHub → Notion) for now.
 - Secrets: `GITHUB_TOKEN`, `NOTION_API_KEY`, `SYNC_TOKEN` (see `.env.tpl`;
-  vault `GitHub-Bookmarks-Sync`).
+  vault `GitHub-Bookmarks-Sync`). Plain config (`NOTION_DATA_SOURCE_ID`)
+  lives under `vars` in wrangler.jsonc, not in `.env.tpl`.
 - **Cron**: daily 06:00 UTC via `triggers.crons` in wrangler.jsonc; manual
   runs via `POST /api/sync` with `Authorization: Bearer $SYNC_TOKEN` — a
   stopgap until CF Access fronts the Worker.
@@ -36,7 +35,7 @@ cron trigger + manual endpoint.
   compiles into the one Worker. Do not create a separate backend for form
   handling, D1 reads, or thin API glue.
 - Heavier Python work (AI pipelines, scraping, long jobs) does NOT belong
-  here — that's Modal or the mac mini (see the `personal-infra` skill).
+  here — that's Modal or the mac mini (see the `infra` skill).
 - Bindings (D1, R2, KV, cron triggers) are declared in `wrangler.jsonc` —
   that file IS the IaC. Access them via `platform.env` (typed in
   `worker-configuration.d.ts`; regenerate with `bun run gen`).
@@ -57,8 +56,7 @@ options live in `vite.config.ts` inside the `sveltekit()` plugin.
 
 - ALL design tokens (colors, fonts, spacing, radii) go in the `@theme` block
   in `src/routes/layout.css`. Components consume tokens, never raw values.
-- Icons: heroicons.com ONLY — never emojis or generic unicode. Reference
-  clone at `~/Desktop/coding/reference-repos/heroicons`.
+- Icons: heroicons.com ONLY — never emojis or generic unicode.
 
 ## Commands
 
