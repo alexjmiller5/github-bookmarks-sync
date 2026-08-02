@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 github-bookmarks-sync: one-way sync of GitHub starred repos → Notion
 Bookmarks DB (upsert by URL, tagged "Github"). Cloudflare Worker (cf-site
@@ -60,7 +60,7 @@ options live in `vite.config.ts` inside the `sveltekit()` plugin.
 
 ## Commands
 
-Standard verb set (see global CLAUDE.md) — the justfile is the interface,
+Standard verb set (see global AGENTS.md) — the justfile is the interface,
 not a script catalog; one-offs go in `scripts/` and run directly.
 
 | Command                   | Purpose                                             |
